@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>顏值等級自我評估</title>
+    <style>
+        body {
+            font-family: "Microsoft JhengHei", "Segoe UI", Arial, sans-serif;
+            max-width: 720px;
+            margin: 20px auto;
+            padding: 15px;
+            background: linear-gradient(135deg, #f0f4ff, #e0e7ff);
+            color: #1f2937;
+            line-height: 1.5;
+        }
+        h1 {
+            text-align: center;
+            color: #1e40af;
+            margin-bottom: 15px;
+            font-size: 1.8rem;
+        }
+        .progress {
+            text-align: center;
+            font-size: 1rem;
+            color: #4b5563;
+            margin-bottom: 20px;
+        }
+        .question {
+            display: none;
+            margin: 15px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+        .question.active {
+            display: block;
+        }
+        .question p {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #1e40af;
+        }
+        .option {
+            margin: 10px 0;
+        }
+        input[type="radio"] {
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+        label {
+            font-size: 1.05rem;
+            cursor: pointer;
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0 20px;
+        }
+        button {
+            padding: 10px 40px;
+            font-size: 1.05rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        #prevBtn {
+            background: #6b7280;
+            color: white;
+        }
+        #prevBtn:hover:not(:disabled) {
+            background: #4b5563;
+        }
+        #nextBtn {
+            background: linear-gradient(90deg, #3b82f6, #60a5fa);
+            color: white;
+        }
+        #nextBtn:hover {
+            background: linear-gradient(90deg, #2563eb, #3b82f6);
+            box-shadow: 0 6px 12px rgba(59,130,246,0.3);
+        }
+        #result {
+            display: none;
+            margin: 30px auto 20px;
+            padding: 25px 20px;
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border-radius: 16px;
+            text-align: center;
+            border: 2px solid #34d399;
+            box-shadow: 0 8px 20px rgba(52,211,153,0.2);
+            animation: fadeIn 0.8s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        #result h2 {
+            font-size: 1.8rem;
+            color: #065f46;
+            margin: 0 0 12px;
+        }
+        #result #score {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #047857;
+            margin: 8px 0;
+        }
+        #result #level {
+            font-size: 2rem;
+            font-weight: bold;
+            background: linear-gradient(90deg, #10b981, #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 10px 0;
+        }
+        #result #comment {
+            font-size: 1.25rem;
+            color: #374151;
+            margin: 12px 0;
+            line-height: 1.5;
+        }
+        .restart-btn {
+            margin-top: 15px;
+            padding: 10px 50px;
+            font-size: 1.1rem;
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .restart-btn:hover {
+            background: linear-gradient(90deg, #d97706, #f59e0b);
+            transform: translateY(-2px);
+        }
+        .note {
+            color: #6b7280;
+            font-size: 0.9rem;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>顏值等級自我評估</h1>
+
+    <div class="progress">第 <span id="currentQuestion">1</span> / 10 題</div>
+
+    <form id="quizForm"></form>
+
+    <div class="nav-buttons">
+        <button id="prevBtn" onclick="prevQuestion()" disabled>上一題</button>
+        <button id="nextBtn" onclick="nextQuestion()">下一題</button>
+    </div>
+
+    <div id="result">
+        <h2>✨ 你的顏值等級揭曉 ✨</h2>
+        <p id="score"></p>
+        <p id="level"></p>
+        <p id="comment"></p>
+        <button class="restart-btn" onclick="location.reload()">重新測驗</button>
+        <p class="note">（僅供娛樂參考，每個人都有獨特的美！）</p>
+    </div>
+
+    <script>
+        const questions = [
+            { text: "1. 你的頭髮狀況如何？", options: ["髒亂、油膩或嚴重受損", "普通，偶爾打理", "乾淨、直順或有基本造型", "精緻、時尚造型，總是完美"] },
+            { text: "2. 你的皮膚狀況如何？", options: ["紅腫、痘痘或暗沉嚴重", "偶爾有問題，但可控", "光滑、均勻", "無暇、光澤如瓷"] },
+            { text: "3. 你的眼睛和眼神如何？", options: ["死魚眼、小而無神", "普通大小，偶爾疲憊", "明亮、有神", "大而有魅力，眼神迷人"] },
+            { text: "4. 你的身材比例如何？", options: ["嚴重不均衡（如巨胖或過瘦）", "普通，有點小問題", "匀稱、健康", "完美曲線，模特兒級"] },
+            { text: "5. 你的妝容或打扮風格如何？", options: ["不打扮或土氣", "基本妝容，簡單服裝", "講究，適合日常", "精緻、高級感強"] },
+            { text: "6. 你的氣質給人什麼感覺？", options: ["病態或低落", "普通、平凡", "溫和、親切", "優雅、冷豔或仙氣"] },
+            { text: "7. 你的五官協調度如何？", options: ["不協調（如齙齒或扁平）", "一般，無明顯缺陷", "協調，好看", "完美、立體"] },
+            { text: "8. 你的整體自信和魅力如何？", options: ["缺乏自信，低頭走路", "中等，偶爾自信", "自信，吸引注意", "超強魅力，眾人焦點"] },
+            { text: "9. 你的服裝搭配如何？", options: ["隨便、髒舊", "基本搭配，實用", "時尚但不張揚", "高端、完美配飾"] },
+            { text: "10. 別人對你的外貌評價如何？", options: ["很少讚美，甚至負面", "普通，偶爾稱讚", "常被說好看", "總是被讚美為美女"] }
+        ];
+
+        let currentIndex = 0;
+        const answers = new Array(questions.length).fill(0);
+
+        const form = document.getElementById('quizForm');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const progress = document.getElementById('currentQuestion');
+
+        questions.forEach((q, idx) => {
+            const div = document.createElement('div');
+            div.className = 'question';
+            div.id = `q${idx}`;
+
+            div.innerHTML = `<p><strong>${q.text}</strong></p>`;
+
+            q.options.forEach((opt, i) => {
+                div.innerHTML += `
+                    <div class="option">
+                        <input type="radio" name="q${idx}" value="${i+1}" id="opt${idx}_${i+1}">
+                        <label for="opt${idx}_${i+1}">${i+1}. ${opt}</label>
+                    </div>
+                `;
+            });
+
+            form.appendChild(div);
+        });
+
+        function showCurrent() {
+            document.querySelectorAll('.question').forEach((q, i) => {
+                q.style.display = i === currentIndex ? 'block' : 'none';
+            });
+
+            progress.textContent = currentIndex + 1;
+
+            const radios = document.querySelectorAll(`input[name="q${currentIndex}"]`);
+            radios.forEach(r => {
+                if (parseInt(r.value) === answers[currentIndex]) r.checked = true;
+            });
+
+            prevBtn.disabled = currentIndex === 0;
+            nextBtn.textContent = currentIndex === questions.length - 1 ? "送出評估" : "下一題";
+        }
+
+        function nextQuestion() {
+            const selected = document.querySelector(`input[name="q${currentIndex}"]:checked`);
+            if (!selected) {
+                alert("請先選擇一個選項！");
+                return;
+            }
+            answers[currentIndex] = parseInt(selected.value);
+
+            if (currentIndex < questions.length - 1) {
+                currentIndex++;
+                showCurrent();
+            } else {
+                submitQuiz();
+            }
+        }
+
+        function prevQuestion() {
+            const selected = document.querySelector(`input[name="q${currentIndex}"]:checked`);
+            if (selected) answers[currentIndex] = parseInt(selected.value);
+
+            if (currentIndex > 0) {
+                currentIndex--;
+                showCurrent();
+            }
+        }
+
+        function submitQuiz() {
+            if (answers.includes(0)) {
+                alert("請回答所有問題！");
+                return;
+            }
+
+            const total = answers.reduce((a, b) => a + b, 0);
+            const level = Math.min(9, Math.max(1, Math.floor((total - 10) / 3) + 1));
+
+            let comment = "";
+            if (level <= 3) comment = "還有很大的進步空間！多保養、多打扮會越來越漂亮的～加油！";
+            else if (level <= 6) comment = "普通偏上的水準，稍微用心打扮就能有明顯提升！";
+            else comment = "已經很有魅力了！繼續保持就是女神級別啦～";
+
+            document.getElementById('score').textContent = `總分：${total} / 40`;
+            document.getElementById('level').textContent = `★★★ ${level}分 ★★★`;
+            document.getElementById('comment').textContent = comment;
+
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
+
+            form.style.display = 'none';
+            document.querySelector('.nav-buttons').style.display = 'none';
+        }
+
+        showCurrent();
+    </script>
+</body>
+</html>
